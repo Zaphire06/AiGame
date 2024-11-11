@@ -1,0 +1,164 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+}
+
+/* Styles de base pour l'interface */
+/* Interface de jeu */
+.interface {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 20px;
+  border-radius: 10px;
+  color: white;
+  width: 300px;
+  transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+  /* Pour l'animation */
+  box-shadow: 0px 0px 20px rgba(0, 255, 255, 0.5);
+  font-family: 'Press Start 2P', sans-serif;
+  opacity: 1;
+  /* L'interface est visible par défaut */
+}
+
+/* Styles pour les sliders */
+.sliders .slider {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background: transparent;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  background: #00ffff;
+  /* Bordure lumineuse bleue */
+  border-radius: 5px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 20px;
+  width: 20px;
+  background: #00ffff;
+  /* Couleur du bouton du slider */
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px #00ffff;
+  /* Glow lumineux autour du bouton */
+}
+
+input[type="range"]:focus::-webkit-slider-runnable-track {
+  background: #00ffaa;
+  /* Change légèrement de couleur au focus */
+}
+
+/* Styles pour les boutons */
+button {
+  background-color: transparent;
+  border: 2px solid #00ffff;
+  /* Bordure néon */
+  color: white;
+  font-size: 14px;
+  font-family: 'Press Start 2P', sans-serif;
+  /* Style jeu rétro */
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 10px 0;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  width: 100%;
+  /* Pour que le bouton prenne tout l'espace */
+}
+
+button:hover {
+  background-color: #00ffff;
+  /* Change la couleur d'arrière-plan au hover */
+  color: black;
+  /* Le texte devient noir au hover */
+  box-shadow: 0px 0px 15px rgba(0, 255, 255, 0.8);
+  /* Glow autour du bouton au hover */
+}
+
+button:active {
+  background-color: #00ffaa;
+  /* Change la couleur lors du clic */
+  box-shadow: 0px 0px 10px rgba(0, 255, 255, 0.5);
+  /* Réduction du glow lors du clic */
+}
+
+/* Changer l'apparence des labels des modes */
+.mode label {
+  font-size: 14px;
+  color: #00ffff;
+  margin-right: 10px;
+}
+
+span {
+  color: #00ffff;
+  /* Couleur du texte lumineux */
+}
+
+/* Animation de transition pour les hovers et les clics */
+button,
+input[type="range"] {
+  transition: 0.3s ease-in-out;
+}
+
+.toggle-btn {
+  position: absolute;
+  top: 0px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+  box-shadow: 0px 0px 10px rgba(0, 255, 255, 0.7);
+  z-index: 9999;
+  width: 50px;
+  height: 50px;
+  /* Assure que l'icône reste visible par-dessus tout */
+}
+
+.toggle-btn i {
+  color: #00ffff;
+  /* Couleur de l'icône */
+}
+
+
+.toggle-btn:hover {
+  background-color: #00ffff;
+  color: black;
+  box-shadow: 0px 0px 15px rgba(0, 255, 255, 1);
+}
+
+/* Interface masquée (rabattue) */
+.interface.hidden {
+  transform: translateX(320px);
+  /* Déplace l'interface hors de l'écran */
+  opacity: 0;
+  pointer-events: none;
+  /* Désactive les interactions quand cachée */
+}

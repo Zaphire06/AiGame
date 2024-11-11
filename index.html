@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Sketch</title>
+
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+
+  <script src="libraries/p5.min.js"></script>
+  <script src="libraries/p5.sound.min.js"></script>
+  <script src="vehicle.js"></script>
+  <script src="sketch.js"></script>
+  <script src="menu.js"></script>
+</head>
+
+<body>
+  <div class="interface" style="display: none;">
+    <button class="toggle-btn" onclick="toggleInterface()">
+      <i class="fas fa-cog"></i>
+    </button>
+
+    <div class="sliders">
+      <div class="slider">
+        <label for="maxspeed">Max Speed</label>
+        <input type="range" id="maxspeed" min="0" max="100" value="8" oninput="updateVehicles()">
+        <span id="maxspeed-value">20</span>
+      </div>
+      <div class="slider">
+        <label for="maxforce">Max Force</label>
+        <input type="range" id="maxforce" min="0" max="1" step="0.01" value="0.25" oninput="updateVehicles()">
+        <span id="maxforce-value">0.25</span>
+      </div>
+      <div class="slider">
+        <label for="radius">Radius</label>
+        <input type="range" id="radius" min="0" max="100" value="16" oninput="updateVehicles()">
+        <span id="radius-value">16</span>
+      </div>
+    </div>
+
+    <div class="hits">
+      <label for="hits">Hits</label>
+      <span id="hits-value">0</span>
+    </div>
+
+    <div class="button">
+      <button onclick="switchTargetMode()">Update Vehicles</button>
+      <button onclick="toggleVector()">Toggle Velocity Vector</button>
+      <button onclick="toggleAvoidCollisions()">Toggle Collision Avoidance</button>
+      <button onclick="toggleFormation()">Toggle Formation</button>
+      <button onclick="toggleMeteorMode()">Toggle Meteor Mode</button>
+      <button onclick="changeGameMode('peaceful')">Peaceful Mode</button>
+      <button onclick="changeGameMode('normal')">Normal Mode</button>
+      <button onclick="changeGameMode('hardcore')">Hardcore Mode</button>
+    </div>
+
+    <div class="mode">
+      <label for="mode">Mode</label>
+      <button id="mode-button" onclick="toggleMode()">Switch Mode</button>
+      <span id="mode-value">Follow</span>
+    </div>
+  </div>
+
+
+  <script>
+    let isInterfaceVisible = true;
+
+    function toggleInterface() {
+      const interfaceElement = document.querySelector('.interface');
+
+      // Basculer la visibilité de l'interface
+      if (isInterfaceVisible) {
+        interfaceElement.classList.add('hidden'); // Masquer l'interface
+      } else {
+        interfaceElement.classList.remove('hidden'); // Afficher l'interface
+      }
+
+      // Inverser l'état de visibilité
+      isInterfaceVisible = !isInterfaceVisible;
+    }
+
+    let seekMode = 'follow'; // Mode par défaut
+
+    // Fonction pour basculer entre les modes
+    // function toggleMode() {
+    //   if (seekMode === 'follow') {
+    //     seekMode = 'destroy';
+    //     document.getElementById('mode-value').textContent = 'Destroy';
+    //   } else {
+    //     seekMode = 'follow';
+    //     document.getElementById('mode-value').textContent = 'Follow';
+    //   }
+
+    //   // Mettre à jour le mode de tous les véhicules
+    //   vehicles.forEach(vehicle => {
+    //     vehicle.seekMode = seekMode;
+    //   });
+    // }
+  </script>
+
+  <script>
+    function updateTarget() {
+      // Assuming you have an array of vehicles
+      mouseMode = !mouseMode;
+    }
+    function updateHits(hits) {
+      document.getElementById('hits-value').textContent = hits;
+    }
+  </script>
+  </div>
+
+  <script>
+    function updateVehicles() {
+      const maxSpeed = document.getElementById('maxspeed').value;
+      const maxForce = document.getElementById('maxforce').value;
+      const radius = document.getElementById('radius').value;
+
+      document.getElementById('maxspeed-value').textContent = maxSpeed;
+      document.getElementById('maxforce-value').textContent = maxForce;
+      document.getElementById('radius-value').textContent = radius;
+
+      // Applique les changements à tous les véhicules, y compris le leader (vehicles[0])
+      vehicles.forEach(vehicle => {
+        vehicle.maxSpeed = parseFloat(maxSpeed);
+        vehicle.maxForce = parseFloat(maxForce);
+        vehicle.r = parseFloat(radius);
+      });
+    }
+  </script>
+  </div>
+  </div>
+</body>
+
+</html>
