@@ -1,8 +1,11 @@
 let target, vehicle, targetObj;
 let vehicles;
+let transporters;
 let hits = 0;
 let mouseMode = true; // Mode cible par défaut : souris
 let vehicleImg;
+let astroImg;
+let transporterImg;
 let showVelocityVector = true; // Par défaut, le vecteur vitesse est affiché
 let avoidCollisions = false; // Désactivé par défaut
 let inFormation = false; // Le mode de formation est désactivé par défaut
@@ -17,23 +20,20 @@ let explosionFrames = [];
 let font;  // Police pour former les textes avec des particules
 let menuParticles = [];
 let buttons = [];
+let rescuedAstronauts = []; // Compteur des astronautes sauvés
+let astronautParticles = [];
+let restartParticles = []; // Particules pour le bouton "Restart"
+let showRestartButton = true; // Contrôle l'affichage du bouton
 
 let activeMode = "DESTROY";  // Mode actif par défaut
 
-let buttonLabels = [
-  "TOGGLE TARGET MODE",
-  "TOGGLE FORMATION", "TOGGLE METEOR MODE", "TOGGLE VELOCITY VECTOR",
-  "PEACEFUL MODE", "NORMAL MODE", "HARDCORE MODE", "SWITCH MODE"
-];
-
-
 function toggleMode() {
   print("Changement de mode");
-  if (activeMode === "FOLLOW") {
-    activeMode = "DESTROY";
+  if (activeMode === "DESTROY") {
+    activeMode = "FOLLOW";
     print("Mode actif:", activeMode);
   } else {
-    activeMode = "FOLLOW";
+    activeMode = "DESTROY";
     console.log("Mode actif:", activeMode);
   }
 
@@ -92,6 +92,12 @@ function preload() {
   loadStrings('./explosion_spritesheet.txt', parseSpriteData);
 
   vehicleImg = loadImage('./vehicule.png');
+
+  transporterImg = loadImage('./transporter.png');
+
+  astroImg = loadImage('./astro_buffa.png');
+
+  targetImg = loadImage('./astro_winter.png');
 }
 
 function parseSpriteData(data) {
@@ -123,6 +129,14 @@ function mousePressed() {
   for (let slider of sliders) {
     slider.startDrag();
   }
+
+  if (showRestartButton && isMouseOverRestart()) {
+    restartGame();
+  }
+}
+
+function isMouseOverRestart() {
+  return restartParticles.some(p => dist(mouseX, mouseY, p.pos.x, p.pos.y) < 10);
 }
 
 function mouseReleased() {
@@ -168,6 +182,19 @@ function generateModeParticles(modeText) {
   });
 }
 
+function generateRestartParticles() {
+  restartParticles = []; // Réinitialiser les particules
+  let points = font.textToPoints("RESTART", width / 2 - 100, height / 2 + 150, 40, {
+      sampleFactor: 0.8
+  });
+
+  points.forEach(pt => {
+      let p = new MenuParticle(pt.x, pt.y);
+      restartParticles.push(p);
+  });
+}
+
+
 function arrangeParticlesToText(modeText) {
   modeParticles.forEach(p => {
     let force = p5.Vector.random2D().mult(random(2, 7));  // Appliquer une force aléatoire de dispersion
@@ -201,20 +228,61 @@ function arrangeParticlesToText(modeText) {
 
 }
 
+function generateAstronautParticles(countText) {
+  astronautParticles = [];  // Réinitialiser les particules du compteur
+  let points = font.textToPoints(countText, 400, 50, 20, {
+      sampleFactor: 0.9  // Ajuste le nombre de particules
+  });
+
+  points.forEach(pt => {
+      let p = new MenuParticle(pt.x, pt.y);
+      astronautParticles.push(p);
+  });
+}
+
+function updateAstronautParticles(countText) {
+  // Ajouter une animation de dispersion avant la transition
+  astronautParticles.forEach(p => {
+      let force = p5.Vector.random2D().mult(random(2, 7)); // Appliquer une force aléatoire
+      p.applyForce(force);
+  });
+
+  // Générer les nouveaux points pour le chiffre mis à jour
+  let newPoints = font.textToPoints(countText, 400, 50, 20, {
+      sampleFactor: 0.9
+  });
+
+  // Réassigner les cibles aux particules existantes
+  for (let i = 0; i < astronautParticles.length; i++) {
+      if (i < newPoints.length) {
+          astronautParticles[i].target = createVector(newPoints[i].x, newPoints[i].y);
+      } else {
+          let randomIndex = int(random(newPoints.length));
+          astronautParticles[i].target = createVector(newPoints[randomIndex].x, newPoints[randomIndex].y);
+      }
+  }
+
+  // Ajouter de nouvelles particules si nécessaire
+  if (newPoints.length > astronautParticles.length) {
+      for (let i = astronautParticles.length; i < newPoints.length; i++) {
+          let newParticle = new MenuParticle(newPoints[i].x, newPoints[i].y);
+          astronautParticles.push(newParticle);
+      }
+  }
+}
+
 //// Game over si tous les véhicules sont détruits, toutes les particules des boutons des menus forme le texte "GAME OVER"
 function gatherButtonParticlesForGameOver() {
   let allParticles = [];
+  astronautParticles = [];
+  modeParticles = []
+
 
   // Récupérer toutes les particules des boutons
   buttons.forEach(button => {
     allParticles = allParticles.concat(button.particles);
     print("Particules des bouton:", allParticles.length);
   });
-
-  // // Réinitialiser les particules des boutons
-  // buttons.forEach(button => {
-  //   button.particles = [];
-  // });
 
   // Générer les points pour le texte "GAME OVER"
   let points = font.textToPoints("GAME OVER", width / 2 - 500, height / 2, 120, {
@@ -231,6 +299,9 @@ function gatherButtonParticlesForGameOver() {
     }
   }
 
+  
+  // buttons.push(new Button("RESTART", 600, height - 500, () => print("OUIIIII")));
+
   // Si le texte a plus de points que les particules disponibles, créer de nouvelles particules
   if (points.length > allParticles.length) {
     for (let i = allParticles.length; i < points.length; i++) {
@@ -240,13 +311,14 @@ function gatherButtonParticlesForGameOver() {
   } else {
     // Si il y a plus de particules que de points, les faire voler dans tous les sens
     for (let i = points.length; i < allParticles.length; i++) {
-      let randomForce = p5.Vector.random2D().mult(random(2, 7));  // Appliquer une force aléatoire de dispersion
-      allParticles[i].applyForce(randomForce);  // Appliquer la force de dispersion
+      let randomForce = p5.Vector.random2D().mult(random(2, 7)); 
+      allParticles[i].applyForce(randomForce); 
     }
   }
 
-  // Assigner les particules au tableau global des particules
-  // menuParticles = allParticles;
+  // Ajouter les particules pour le bouton "RESTART"
+  generateRestartParticles();
+  showRestartButton = true;
 }
 
 function setup() {
@@ -255,6 +327,8 @@ function setup() {
 
   // Générer les particules du mode actif
   generateModeParticles(activeMode);
+
+  generateAstronautParticles(rescuedAstronauts.length.toString()); // Particules pour le compteur initial
 
   // Initialisation du menu (appel de initMenu dans menu.js)
   // initMenu();
@@ -267,18 +341,8 @@ function setup() {
   buttons.push(new Button("METEOR MODE", 50, height - 50, toggleMeteorMode));
   buttons.push(new Button("PEACEFUL MODE", 300, height - 50, () => changeGameMode('peaceful')));
   buttons.push(new Button("NORMAL MODE", 600, height - 50, () => changeGameMode('normal')));
-  buttons.push(new Button("HARDCORE MODE", 900, height - 50, () => changeGameMode('hardcore')));
-
-
-  // Première ligne de boutons
-  // for (let i = 0; i < 4; i++) {
-  //   generateButtonParticles(buttonLabels[i], buttonX + i * buttonSpacingX, buttonY1);
-  // }
-
-  // // Deuxième ligne de boutons
-  // for (let i = 4; i < buttonLabels.length; i++) {
-  //   generateButtonParticles(buttonLabels[i], buttonX + (i - 4) * buttonSpacingX, buttonY2);
-  // }
+  
+  buttons.push(new Button("RESCUSED ASTRONAUT", 50, 50, null));
 
   sliders.push(new Slider("Max Speed", width - 250, 50, 200, 8, 0, 100, updateMaxSpeed));
   sliders.push(new Slider("Max Force", width - 250, 100, 200, 0.25, 0, 1, updateMaxForce));
@@ -305,6 +369,13 @@ function setup() {
     let x = random(width);
     let y = random(height);
     vehicles.push(new Vehicle(x, y));
+  }
+
+  // Création du transporteur
+  transporters = [];
+  let nbTransporters = 1; // Nombre de transporteurs
+  for (let i = 0; i < nbTransporters; i++) {
+    transporters.push(new Transporter(random(width), random(height)));
   }
 
   target = createVector(random(width), random(height)); // Cible initiale
@@ -386,9 +457,20 @@ function drawParticles() {
   }
 }
 
+function drawRestartButton() {
+  if (showRestartButton) {
+      restartParticles.forEach(p => {
+          p.behaviors();
+          p.update();
+          p.show();
+      });
+  }
+}
+
 
 let explosions = []; // Pour suivre les explosions actives
 let particles = []; // Tableau pour suivre les particules actives
+let astronauts = []; // Liste des astronautes
 
 function destroyVehicle(v) {
 
@@ -399,18 +481,20 @@ function destroyVehicle(v) {
     frameCounter: 0       // Compteur pour ralentir l'animation
   });
 
+  console.log("Explosion at", v.pos.x, v.pos.y);
 
   // Retirer le véhicule de la simulation après l'explosion
-  setTimeout(() => {
     let index = vehicles.indexOf(v);
     if (index !== -1) {
       vehicles.splice(index, 1);
     }
+
+    astronauts.push(new Astronaut(v.pos.x, v.pos.y)); // Ajouter un astronaute
+
     // Générer des particules à la position du véhicule détruit
-    for (let i = 0; i < 20; i++) { // 20 particules par explosion, tu peux ajuster ce nombre
+    for (let i = 0; i < 50; i++) { // 50 particules par explosion, tu peux ajuster ce nombre
       particles.push(new Particle(v.pos.x, v.pos.y));
     }
-  }, 50); // Délai pour laisser le temps à l'animation de se jouer
 }
 
 function keyPressed() {
@@ -438,11 +522,30 @@ function draw() {
 
   drawParticles();
 
+  drawRestartButton();
+
+  for (let transporter of transporters) {
+    transporter.update(astronauts, meteors, rescuedAstronauts); // Met à jour le transporteur
+    transporter.show(); // Affiche le transporteur  
+  }
+
+  astronautParticles.forEach(a => {
+    a.behaviors();
+    a.update();
+    a.show();
+  });
+
   // drawMenu();
 
   sliders.forEach(slider => {
     slider.show();  // Affiche chaque slider
   });
+
+  for (let astronaut of astronauts) {
+    astronaut.update();
+    astronaut.show();
+  }
+
 
   buttons.forEach(button => {
     button.show();  // Afficher chaque bouton (les particules)
@@ -539,7 +642,9 @@ function draw() {
   } else {
     // Si le leader est détruit, le jeu est perdu
     print("Game Over");
+    
     gatherButtonParticlesForGameOver(); // Générer les particules pour le texte "GAME OVER"
+
     //noLoop(); // Arrêter la boucle draw
   }
 
@@ -558,3 +663,41 @@ function draw() {
     }
   }
 }
+
+function restartGame() {
+  vehicles = [];
+  transporters = [];
+  meteors = [];
+  astronauts = [];
+  particles = [];
+  explosions = [];
+  rescuedAstronauts = [];
+
+  // Recréer les véhicules
+  let nbVehicles = 12; // Nombre de véhicules
+  for (let i = 0; i < nbVehicles; i++) {
+      let x = random(width);
+      let y = random(height);
+      vehicles.push(new Vehicle(x, y));
+  }
+
+  // Recréer les transporteurs
+  let nbTransporters = 1; // Nombre de transporteurs
+  for (let i = 0; i < nbTransporters; i++) {
+      transporters.push(new Transporter(random(width), random(height)));
+  }
+
+  // Recréer les météorites
+  for (let i = 0; i < numMeteors; i++) {
+      meteors.push(new Meteor());
+  }
+
+  // Recréer les particules du compteur
+  generateAstronautParticles(rescuedAstronauts.length.toString());
+
+  // Réinitialiser les boutons et mode
+  generateModeParticles(activeMode);
+  showRestartButton = false;
+  loop();
+}
+

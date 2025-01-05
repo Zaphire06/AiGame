@@ -278,8 +278,7 @@ class Vehicle {
     pop();
   }
 
-  // que fait cette méthode ?
-  // elle permet de faire réapparaitre le véhicule de 
+  // Permet de faire réapparaitre le véhicule de 
   // l'autre côté du canvas
   edges() {
     if (this.pos.x > width + this.r) {
@@ -329,9 +328,12 @@ class Target extends Vehicle {
   }
 
   show() {
-    fill("red");
-    noStroke();
-    circle(this.pos.x, this.pos.y, 32); // Dessiner la cible
+    push();
+    translate(this.pos.x, this.pos.y);
+    rotate(this.vel.heading() + PI / 2); // Ajoute une rotation de 90° pour que l'avant du PNG soit bien orienté
+    imageMode(CENTER); // Centre l'image au milieu de la position
+    image(targetImg, 0, 0, this.r * 5, this.r * 6); // Ajuste la taille de l'image (augmentée ici)
+    pop();
   }
 }
 
